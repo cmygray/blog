@@ -1,0 +1,51 @@
+---
+import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const siteTitle = "cmygray";
+const pageTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="alternate" type="application/rss+xml" href="/rss.xml" title={siteTitle} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <ViewTransitions />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <nav>
+          <a href="/" class="site-name">{siteTitle}</a>
+          <ul>
+            <li><a href="/">blog</a></li>
+            <li><a href="/about">about</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main>
+        <slot />
+      </main>
+
+      <footer>
+        <p>
+          <a href="/rss.xml">RSS</a>
+          {' · '}
+          <span>© {new Date().getFullYear()}</span>
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
