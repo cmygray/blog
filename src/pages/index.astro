@@ -1,57 +1,42 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 
 const posts = (await getCollection('posts'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-function formatDate(date: Date) {
+function fmt(date: Date) {
   return date.toISOString().slice(0, 10);
 }
-
-const rendered = await Promise.all(
-  posts.map(async (post) => ({
-    post,
-    Content: (await render(post)).Content,
-  }))
-);
 ---
 
-<Base title="원의 블로그">
-  {rendered.map(({ post, Content }, i) => (
-    <article class="post-entry">
-      <header class="post-header">
-        <h1 class="post-title">
-          <a href={`/posts/${post.slug}`}>{post.data.title}</a>
-        </h1>
-        <div class="post-meta">
-          <time datetime={post.data.date.toISOString()}>
-            {formatDate(post.data.date)}
-          </time>
-        </div>
-      </header>
-      <div class="post-content">
-        <Content />
-      </div>
-      {i < rendered.length - 1 && <hr class="post-divider" />}
-    </article>
-  ))}
-</Base>
+<Base title="two.kim" description="개발하면서 배운 것들, 생각한 것들을 기록합니다.">
+  <div class="sw-label">
+    <strong>글</strong>
+    <span class="sw-num">{posts.length}편</span>
+  </div>
 
-<style>
-  .post-entry {
-    margin-bottom: 1rem;
-  }
-  .post-title a {
-    text-decoration: none;
-    color: var(--text);
-  }
-  .post-title a:hover {
-    color: var(--accent);
-  }
-  .post-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 4rem 0;
-  }
-</style>
+  {posts.length > 0 ? (
+    <ol class="sw-list">
+      {posts.map((p) => (
+        <li class="sw-row">
+          <div class="sw-row-meta">
+            <time class="sw-num" datetime={p.data.date.toISOString()}>{fmt(p.data.date)}</time>
+            {p.data.tags?.length ? (
+              <span class="sw-row-tag-inline">{p.data.tags.join(', ')}</span>
+            ) : null}
+          </div>
+          <div class="sw-row-body">
+            <h2 class="sw-row-title"><a href={`/posts/${p.slug}`}>{p.data.title}</a></h2>
+            {p.data.description && <p class="sw-row-desc">{p.data.description}</p>}
+          </div>
+          {p.data.tags?.length ? (
+            <div class="sw-row-tag">{p.data.tags.join(', ')}</div>
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p class="sw-empty">아직 글이 없습니다.</p>
+  )}
+</Base>

@@ -1,6 +1,6 @@
 ---
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '../styles/global.css';
-import { ViewTransitions } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -8,8 +8,14 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const siteTitle = "cmygray";
+const siteTitle = 'two.kim';
 const pageTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
+
+const pathname = Astro.url.pathname;
+const isAbout = pathname === '/about' || pathname.startsWith('/about/');
+const isHome = pathname === '/';
+const year = new Date().getFullYear();
+const hasArt = Astro.slots.has('art');
 ---
 
 <!doctype html>
@@ -21,31 +27,87 @@ const pageTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
     {description && <meta name="description" content={description} />}
     <link rel="alternate" type="application/rss+xml" href="/rss.xml" title={siteTitle} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <ViewTransitions />
+    <script is:inline>
+      /* FOUC 방지: 저장된 테마 → 없으면 시스템 설정 */
+      (function () {
+        var t = 'light';
+        try {
+          var s = localStorage.getItem('theme');
+          t = s === 'dark' || s === 'light'
+            ? s
+            : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <nav>
-          <a href="/" class="site-name">{siteTitle}</a>
-          <ul>
-            <li><a href="/">blog</a></li>
-            <li><a href="/about">about</a></li>
-          </ul>
+    <div class="sw-page">
+      <header class="sw-header">
+        <a href="/" class="sw-brand" aria-label="two.kim 홈">
+          <svg class="sw-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect width="24" height="24" />
+            <text x="12" y="18.4" text-anchor="middle" font-size="17">源</text>
+          </svg>
+          <span>two.kim</span>
+        </a>
+        <nav class="sw-nav" aria-label="주 메뉴">
+          <a href="/" aria-current={isHome ? 'page' : undefined}>글</a>
+          <a href="/about" aria-current={isAbout ? 'page' : undefined}>소개</a>
+          <button class="sw-theme" type="button" data-theme-toggle aria-label="다크 모드로 전환">
+            <i aria-hidden="true"></i>
+          </button>
         </nav>
       </header>
 
-      <main>
+      {hasArt && (
+        <div class="sw-art" data-art-slot>
+          <slot name="art" />
+        </div>
+      )}
+
+      <main class="sw-main">
         <slot />
       </main>
 
-      <footer>
-        <p>
-          <a href="/rss.xml">RSS</a>
-          {' · '}
-          <span>© {new Date().getFullYear()}</span>
-        </p>
+      <footer class="sw-footer">
+        <span>© {year} 김원 · Won Kim</span>
+        <ul>
+          <li><a href="/rss.xml">RSS</a></li>
+        </ul>
       </footer>
     </div>
+
+    <script>
+      const root = document.documentElement;
+      const btn = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+      const mq = matchMedia('(prefers-color-scheme: dark)');
+
+      function syncLabel() {
+        if (!btn) return;
+        const dark = root.getAttribute('data-theme') === 'dark';
+        const label = dark ? '라이트 모드로 전환' : '다크 모드로 전환';
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+      }
+
+      btn?.addEventListener('click', () => {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch {}
+        syncLabel();
+      });
+
+      // 수동 선택이 없을 때만 시스템 설정 변화를 따라간다
+      mq.addEventListener('change', (e) => {
+        let stored: string | null = null;
+        try { stored = localStorage.getItem('theme'); } catch {}
+        if (stored === 'dark' || stored === 'light') return;
+        root.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        syncLabel();
+      });
+
+      syncLabel();
+    </script>
   </body>
 </html>
